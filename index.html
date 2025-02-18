@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تقارير التدريب المهني</title>
+    <link rel="manifest" href="manifest.json">
+    
+    <style>
+        /* --- Base Styles (for larger screens, and default) - RTL Modifications --- */
+        body {
+            font-family: Arial, sans-serif; /* Keep Arial, or use an RTL-compatible font */
+            margin: 20px;
+            background-color: #f4f4f4;
+            display: flex;
+            direction: rtl; /* Set base direction to RTL */
+            text-align: right; /* Default text alignment to right */
+        }
+        h2, h3 {
+            text-align: right; /* Ensure headings are right-aligned */
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #eee;
+            padding: 20px;
+            border-left: 1px solid #ddd; /* Changed from border-right to border-left for RTL */
+            border-right: none; /* Remove right border if it was there */
+            height: calc(100vh - 40px);
+            overflow-y: auto;
+            margin-right: 20px; /* Add margin to the right of sidebar for form spacing */
+            margin-left: 0; /* Ensure no left margin */
+        }
+        .sidebar h3 {
+            margin-top: 0;
+        }
+        .draft-list {
+            list-style: none;
+            padding: 0;
+        }
+        .draft-item {
+            background-color: white;
+            border: 1px solid #ddd;
+            margin-bottom: 8px;
+            padding: 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between; /* Keep space-between for actions on the left */
+            align-items: center;
+        }
+        .draft-item-info {
+            flex-grow: 1;
+            margin-left: 10px; /* Changed from margin-right to margin-left for RTL */
+            margin-right: 0; /* Remove right margin if it was there */
+        }
+        .draft-actions button {
+            margin-right: 5px; /* Changed from margin-left to margin-right for RTL */
+            margin-left: 0; /* Remove left margin if it was there */
+            padding: 5px 8px;
+            font-size: 0.9em;
+        }
+        .draft-actions button.load-draft {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .draft-actions button.delete-draft {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .draft-actions button.load-draft:hover {
+            background-color: #1e7e34;
+        }
+        .draft-actions button.delete-draft:hover {
+            background-color: #c82333;
+        }
+
+        .form-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 700px;
+            margin: 20px;
+            flex-grow: 1;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: right; /* Ensure form group text is right-aligned */
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            text-align: right; /* Label text right-aligned */
+        }
+        input[type="text"],
+        input[type="date"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 5px;
+            font-size: 1em;
+            text-align: right; /* Input text right-aligned */
+        }
+        textarea {
+            resize: vertical;
+        }
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg fill="black" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+            background-repeat: no-repeat;
+            background-position-x: 0%; /* Changed background-position-x for RTL */
+            background-position-y: 5px;
+            padding-left: 30px; /* Changed from padding-right to padding-left for RTL */
+            padding-right: 8px; /* Keep some right padding for text */
+            direction: ltr; /* Override select direction to LTR for arrow position */
+            text-align: right; /* Ensure select text is right-aligned */
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-left: 10px; /* Changed from margin-right to margin-left for RTL */
+            margin-right: 0; /* Remove right margin if it was there */
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .error-message {
+            color: red;
+            font-size: 0.9em;
+            margin-top: -5px;
+            margin-bottom: 10px;
+            text-align: right; /* Error messages right-aligned */
+        }
+        .offline-message {
+            background-color: #ffe0b2;
+            padding: 10px;
+            text-align: center; /* Keep center alignment for offline message */
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .offline-message.show {
+            display: block;
+        }
+        .draft-message {
+            background-color: #c8e6c9;
+            padding: 10px;
+            text-align: center; /* Keep center alignment for draft message */
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .draft-message.show {
+            display: block;
+        }
+        .submitted-icon {
+            color: green;
+            margin-right: 5px; /* Changed from margin-left to margin-right for RTL */
+            margin-left: 0; /* Remove left margin if it was there */
+        }
+
+        /* --- Media Queries for Responsive Design - RTL Adjustments --- */
+
+        /* For screens smaller than 768px (typical mobile screens) */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+                margin: 10px;
+            }
+            .sidebar {
+                width: 100%;
+                border-left: none; /* Remove left border */
+                border-bottom: 1px solid #ddd;
+                margin-bottom: 10px;
+                height: auto;
+                margin-right: 0; /* Ensure no right margin */
+            }
+            .form-container {
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                margin-bottom: 20px;
+            }
+            .draft-list {
+                margin-bottom: 15px;
+            }
+            h2 {
+                font-size: 1.5em;
+            }
+            button {
+                font-size: 1em;
+                padding: 12px 20px;
+                margin-left: 10px; /* Keep left margin for buttons in mobile view */
+                margin-right: 0; /* Ensure no right margin */
+            }
+            input[type="text"],
+            input[type="date"],
+            input[type="number"],
+            select,
+            textarea {
+                font-size: 1em;
+                padding: 10px;
+            }
+        }
+
+        /* For very small screens (e.g., narrower mobile screens) */
+        @media (max-width: 480px) {
+            h2 {
+                font-size: 1.3em;
+            }
+            .draft-item-info {
+                font-size: 0.9em;
+            }
+            .draft-actions button {
+                font-size: 0.8em;
+                padding: 4px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h3>المسودات المحفوظة</h3>
+        <ul class="draft-list" id="draftList">
+            <!-- Draft items will be dynamically added here -->
+        </ul>
+        <button onclick="loadNewForm()">نموذج جديد</button>
+    </div>
+
+    <div class="form-container">
+        <h2>التقرير اليومي</h2>
+        <div class="offline-message" id="offlineMessage">
+            لايوجد لديك اتصال انترنت في الوقت الحالي سيتم مشاركة تقاريرك حينما يعود الاتصال بالانترنت
+        </div>
+        <div class="draft-message" id="draftMessage">
+            تم جلب المسودة
+        </div>
+        <form id="dataForm">
+            <!-- Form fields - same as before -->
+            <div class="form-group">
+                <label for="collector">اسم المتطوع</label>
+                <select id="collector" name="Collector" required>
+                    <option value="">-- اختر المتطوع --</option>
+                    <option value="هديل">هديل</option>
+                    <option value="شريف">شريف</option>
+                    <option value="عبدالحكيم">عبدالحكيم</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="date">التاريخ</label>
+                <input type="date" id="date" name="Date" required>
+                <div class="error-message" id="dateError"></div>
+            </div>
+            <div class="form-group">
+                <label for="hall">القاعة</label>
+                <select id="hall" name="Hall" required>
+                    <option value="">-- قم باختيار القاعة --</option>
+                    <option value="قاعة 1 خياطة">قاعة 1 خياطة</option>
+                    <option value="قاعة 2 موبايل رجال">قاعة 2 موبايل رجال</option>
+                    <option value="قاعة 3 موبايل نساء">قاعة 3 موبايل نساء</option>
+                    <option value="قاعة 4 بخور م1">قاعة 4 بخور م1</option>
+                    <option value="قاعة 5 بخور م2">قاعة 5 بخور م2</option>
+                    <option value="قاعة 6 معجنات">قاعة 6 معجنات</option>
+                    <option value="قاعة 7 كوافير">قاعة 7 كوافير</option>
+                    <option value="قاعة 8 طاقة شمسية">قاعة 8 طاقة شمسية</option>
+                    <option value="قاعة 9 دراجات نارية">قاعة 9 دراجات نارية</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="trainer_name">اسم المدرب</label>
+                <input type="text" id="trainer_name" name="Trainer_Name" required>
+            </div>
+            <div class="form-group">
+                <label for="trainer_attendance">حضور المدرب</label>
+                <select id="trainer_attendance" name="Trainer_Attendance" required>
+                    <option value="">-- قم بالاختيار من التالي --</option>
+                    <option value="حاضر">حاضر</option>
+                    <option value="غائب">غائب</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="trainees_attended">عدد المتدربين الحاضرين</label>
+                <input type="number" id="trainees_attended" name="Trainees_Attended" min="0" max="50" required>
+                <div class="error-message" id="attendedError"></div>
+            </div>
+            <div class="form-group">
+                <label for="trainees_absent">عدد المتدربين الغائبين</label>
+                <input type="number" id="trainees_absent" name="Trainees_Absent" min="0" max="50" required>
+                <div class="error-message" id="absentError"></div>
+            </div>
+            <div class="form-group">
+                <label for="absent_trainees_names">اسماء المتدربين الغائبين</label>
+                <textarea id="absent_trainees_names" name="Absent_Trainees_Names"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="total_trainees">اجمالي المتدربين</label>
+                <input type="number" id="total_trainees" name="Total_Trainees" readonly>
+            </div>
+            <div class="form-group">
+                <label for="today_lesson">درس اليوم</label>
+                <textarea id="today_lesson" name="Today_lesson" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="today_tools">الادوات المستخدمة بدرس اليوم</label>
+                <textarea id="today_tools" name="Today_tools" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="tomorrow_lesson">درس الغد</label>
+                <textarea id="tomorrow_lesson" name="Tomorrow_Lesson"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="tomorrow_tools">الادوات المستخدمة بدرس الغد</label>
+                <textarea id="tomorrow_tools" name="Tomorrow_Tools"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="notes">ملاحظات</label>
+                <textarea id="notes" name="Notes"></textarea>
+            </div>
+            <div class="form-group">
+                <label>لاتنسى ارسال الصور الخاصة بالتوثيق</label>
+            </div>
+
+            <button type="button" id="saveDraftBtn">حفظ كمسودة</button>
+            <button type="submit">ارسال التقرير</button>
+        </form>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+    <script>
+        // --- JavaScript ---
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js');
+        }
+
+        // --- Firebase Config (REPLACE WITH YOUR OWN) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCXbIQ4vtKohodAhB6aGZkR5rWZxvUj5m8",
+    authDomain: "totestpushtable.firebaseapp.com",
+    databaseURL: "https://totestpushtable-default-rtdb.firebaseio.com",
+    projectId: "totestpushtable",
+    storageBucket: "totestpushtable.firebasestorage.app",
+    messagingSenderId: "672346619110",
+    appId: "1:672346619110:web:714301c96fe397b204cf27"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const dailyReportsRef = database.ref('dailyReport');
+
+        // --- DOM Elements ---
+        const offlineMessage = document.getElementById('offlineMessage');
+        const draftMessage = document.getElementById('draftMessage');
+        const dataForm = document.getElementById('dataForm');
+        const dateInput = document.getElementById('date');
+        const dateError = document.getElementById('dateError');
+        const attendedInput = document.getElementById('trainees_attended');
+        const absentInput = document.getElementById('trainees_absent');
+        const attendedError = document.getElementById('attendedError');
+        const absentError = document.getElementById('absentError');
+        const totalTraineesInput = document.getElementById('total_trainees');
+        const saveDraftBtn = document.getElementById('saveDraftBtn');
+        const draftListElement = document.getElementById('draftList');
+
+        // --- Draft Storage Key ---
+        const DRAFT_STORAGE_KEY = 'dailyReportDrafts';
+        let currentDraftId = null;
+
+        // --- Helper Functions (Validation, Total Calculation, Form Data) ---
+        function generateId() { return Date.now().toString(); }
+        function validateDate() { /* ... same as before ... */
+            const selectedDate = new Date(dateInput.value);
+            const startDate = new Date('2025-02-01');
+            const endDate = new Date('2025-03-31');
+
+            if (selectedDate < startDate || selectedDate > endDate) {
+                dateError.textContent = 'Date must be between February and March 2025.';
+                return false;
+            } else {
+                dateError.textContent = '';
+                return true;
+            }
+        }
+        function validateNumberInput(inputElement, errorElement) { /* ... same as before ... */
+            const value = parseInt(inputElement.value);
+            if (value > 50) {
+                errorElement.textContent = 'Value cannot be more than 50.';
+                return false;
+            } else {
+                errorElement.textContent = '';
+                return true;
+            }
+        }
+        function calculateTotalTrainees() { /* ... same as before ... */
+            const attended = parseInt(attendedInput.value) || 0;
+            const absent = parseInt(absentInput.value) || 0;
+            totalTraineesInput.value = attended + absent;
+        }
+        function getFormData() { /* ... same as before ... */
+            const formData = new FormData(dataForm);
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = value;
+            });
+            return data;
+        }
+        function fillFormWithData(data) { /* ... same as before ... */
+            for (const key in data) {
+                if (dataForm.elements.namedItem(key)) {
+                    dataForm.elements.namedItem(key).value = data[key] || '';
+                }
+            }
+            calculateTotalTrainees();
+        }
+
+        // --- Draft Management Functions ---
+        function saveDraft() {
+            if (!validateDate()) return;
+            if (!validateNumberInput(attendedInput, attendedError)) return;
+            if (!validateNumberInput(absentInput, absentError)) return;
+            calculateTotalTrainees();
+
+            const draftData = getFormData();
+            draftData.id = currentDraftId || generateId();
+            draftData.timestamp = Date.now(); // Add timestamp
+            currentDraftId = draftData.id;
+
+            let drafts = JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY)) || [];
+            const existingDraftIndex = drafts.findIndex(draft => draft.id === draftData.id);
+            if (existingDraftIndex > -1) {
+                drafts[existingDraftIndex] = draftData;
+            } else {
+                drafts.push(draftData);
+            }
+
+            localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(drafts));
+            alert('Form saved as draft!');
+            renderDraftList(); // Re-render draft list after saving
+        }
+
+        function loadDraft(draftId) {
+            const drafts = JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY)) || [];
+            const draftToLoad = drafts.find(draft => draft.id === draftId);
+            if (draftToLoad) {
+                fillFormWithData(draftToLoad);
+                currentDraftId = draftToLoad.id;
+                draftMessage.classList.add('show');
+                setTimeout(() => draftMessage.classList.remove('show'), 3000);
+            } else {
+                alert('Draft not found.');
+            }
+        }
+
+        function deleteDraft(draftId) {
+            let drafts = JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY)) || [];
+            drafts = drafts.filter(draft => draft.id !== draftId);
+            localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(drafts));
+            renderDraftList(); // Re-render draft list after deletion
+            if (currentDraftId === draftId) {
+                loadNewForm(); // Clear form if deleting the currently loaded draft
+            }
+        }
+
+        function renderDraftList() {
+            draftListElement.innerHTML = ''; // Clear current list
+            const drafts = JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY)) || [];
+            drafts.sort((a, b) => b.timestamp - a.timestamp); // Sort by latest first
+
+            if (drafts.length === 0) {
+                draftListElement.innerHTML = '<p>لايوجد اي مسودات محفوظة حالياً</p>';
+                return;
+            }
+
+            drafts.forEach(draft => {
+                const listItem = document.createElement('li');
+                listItem.classList.add('draft-item');
+
+                const draftInfo = document.createElement('div');
+                draftInfo.classList.add('draft-item-info');
+                const draftDate = new Date(parseInt(draft.timestamp)).toLocaleDateString();
+                const collectorName = draft.Collector || 'Unknown Collector'; // Fallback for display
+                draftInfo.textContent = `Draft - Date: ${draftDate}, Collector: ${collectorName}`;
+                listItem.appendChild(draftInfo);
+
+                const draftActions = document.createElement('div');
+                draftActions.classList.add('draft-actions');
+                const loadButton = document.createElement('button');
+                loadButton.textContent = 'Load';
+                loadButton.classList.add('load-draft');
+                loadButton.onclick = () => loadDraft(draft.id);
+                draftActions.appendChild(loadButton);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.classList.add('delete-draft');
+                deleteButton.onclick = () => deleteDraft(draft.id);
+                draftActions.appendChild(deleteButton);
+
+                listItem.appendChild(draftActions);
+                draftListElement.appendChild(listItem);
+            });
+        }
+
+        function loadNewForm() {
+            dataForm.reset();
+            currentDraftId = null;
+            draftMessage.classList.remove('show'); // Hide draft message when starting new form
+        }
+
+
+        // --- Firebase Submission and Offline Handling ---
+        function submitDataToFirebase(data) {
+            dailyReportsRef.child(data.id).set(data)
+                .then(() => {
+                    console.log('Data submitted to Firebase.');
+                    deleteDraft(currentDraftId); // Remove draft after submission
+                    currentDraftId = null;
+                    alert('Report submitted successfully!');
+                    loadNewForm(); // Clear form after submission
+                    return true;
+                })
+                .catch((error) => {
+                    console.error('Error submitting data to Firebase:', error);
+                    return false;
+                });
+        }
+
+        function isOnline() { return navigator.onLine; }
+
+        function saveDataLocally(data) { /* ... same as before ... */
+            let offlineData = JSON.parse(localStorage.getItem('offlineData')) || [];
+            offlineData.push(data);
+            localStorage.setItem('offlineData', JSON.stringify(offlineData));
+            console.log('Data saved locally for offline submission.');
+        }
+
+        function processOfflineData() { /* ... same as before ... */
+            if (!isOnline()) {
+                offlineMessage.classList.add('show');
+                return;
+            }
+            offlineMessage.classList.remove('show');
+
+            let offlineData = JSON.parse(localStorage.getItem('offlineData'));
+            if (offlineData && offlineData.length > 0) {
+                console.log('Processing offline data...');
+                offlineData.forEach(data => {
+                    if (submitDataToFirebase(data)) {
+                         const index = offlineData.indexOf(data);
+                         if (index > -1) {
+                            offlineData.splice(index, 1);
+                         }
+                    }
+                });
+                localStorage.setItem('offlineData', JSON.stringify(offlineData));
+                if (offlineData.length === 0) {
+                    localStorage.removeItem('offlineData');
+                    console.log('All offline data processed and submitted.');
+                } else {
+                    console.log('Some offline data submission might have failed or is still pending.');
+                }
+            } else {
+                console.log('No offline data to process.');
+            }
+        }
+
+
+        // --- Event Listeners ---
+        dataForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            if (!validateDate()) return;
+            if (!validateNumberInput(attendedInput, attendedError)) return;
+            if (!validateNumberInput(absentInput, absentError)) return;
+
+            calculateTotalTrainees();
+            const data = getFormData();
+            data.id = currentDraftId || generateId();
+            currentDraftId = data.id;
+
+            if (isOnline()) {
+                submitDataToFirebase(data);
+            } else {
+                saveDataLocally(data);
+                alert('Report saved for offline submission. It will be submitted when you are online.');
+                offlineMessage.classList.add('show');
+            }
+        });
+
+        saveDraftBtn.addEventListener('click', saveDraft);
+        dateInput.addEventListener('change', validateDate);
+        attendedInput.addEventListener('change', () => validateNumberInput(attendedInput, attendedError));
+        absentInput.addEventListener('change', () => validateNumberInput(absentInput, absentError));
+        attendedInput.addEventListener('input', calculateTotalTrainees);
+        absentInput.addEventListener('input', calculateTotalTrainees);
+
+
+        // --- Initialization on Page Load ---
+        window.addEventListener('load', () => {
+            processOfflineData();
+            renderDraftList(); // Initial render of draft list on page load
+            if (!isOnline()) {
+                offlineMessage.classList.add('show');
+            }
+        });
+
+        window.addEventListener('online', processOfflineData);
+        window.addEventListener('offline', () => {
+            offlineMessage.classList.add('show');
+        });
+
+
+    </script>
+
+</body>
+</html>
